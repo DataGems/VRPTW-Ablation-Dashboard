@@ -169,7 +169,7 @@ def process_iteration_data(data: dict) -> pd.DataFrame:
 
 
 @st.cache_data
-def load_ablation_data(base_dir: str = "/Users/davidpepper/Dropbox/Jobstuff/Resume/Optym/Carnegie Mellon/Experiments/Sept_19/WillRezAbl") -> pd.DataFrame:
+def load_ablation_data(base_dir: str = "data/WillRezAbl") -> pd.DataFrame:
     """
     Load and process all ablation experiment data.
     """
