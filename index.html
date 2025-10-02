@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRPTW Solution Evolution Dashboard</title>
+    
+    <!-- Chart.js for plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr 300px;
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .controls h3 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #6c757d;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.95em;
+            color: #495057;
+            cursor: pointer;
+            transition: border-color 0.15s ease-in-out;
+        }
+        
+        select:hover {
+            border-color: #adb5bd;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #4dabf7;
+            box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.1);
+        }
+        
+        .main-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 20px;
+        }
+        
+        .stats {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            height: fit-content;
+        }
+        
+        .stats h3 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        
+        .stat-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+        
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border: 1px solid #fcc;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .info-box {
+            background: #e7f5ff;
+            border: 1px solid #74c0fc;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #1971c2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 VRPTW Solution Evolution Dashboard</h1>
+        <div class="subtitle">Iteration Timing and Graph Size Analysis</div>
+        
+        <div id="loading" class="loading">Loading experiment data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="dashboard" class="dashboard" style="display: none;">
+            <div class="controls">
+                <h3>🔧 Controls</h3>
+                
+                <div class="control-group">
+                    <label>Number of Customers:</label>
+                    <select id="numCust">
+                        <option value="25">25 customers</option>
+                        <option value="50">50 customers</option>
+                        <option value="100" selected>100 customers</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Instance:</label>
+                    <select id="instance"></select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Visualization Type:</label>
+                    <select id="vizType">
+                        <option value="timing">Iteration Timing</option>
+                        <option value="time_graph">Time Graph Evolution</option>
+                        <option value="ng_graph">NG Graph Evolution</option>
+                    </select>
+                </div>
+                
+                <div class="info-box">
+                    <strong>Visualizations:</strong><br>
+                    • <strong>Iteration Timing:</strong> LP vs Projection time<br>
+                    • <strong>Time Graph:</strong> Size through start→compress→split<br>
+                    • <strong>NG Graph:</strong> Neighborhood graph size evolution
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <div class="chart-title" id="chartTitle">Iteration Timing</div>
+                <div class="chart-container">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <h3>📊 Statistics</h3>
+                <div id="statsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let ablationData = [];
+        let chart = null;
+        let currentData = null;
+        
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetch('ablation_data.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load data file');
+                }
+                ablationData = await response.json();
+                console.log(`Loaded ${ablationData.length} experiments`);
+                // Filter only normal condition
+                ablationData = ablationData.filter(d => d.condition === 'normal');
+                console.log(`Filtered to ${ablationData.length} normal condition experiments`);
+                initializeDashboard();
+            } catch (error) {
+                showError(`Error loading data: ${error.message}. Please make sure ablation_data.json exists.`);
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = message;
+        }
+        
+        function initializeDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'grid';
+            
+            // Set up event listeners
+            document.getElementById('numCust').addEventListener('change', updateInstanceList);
+            document.getElementById('instance').addEventListener('change', updateVisualization);
+            document.getElementById('vizType').addEventListener('change', updateVisualization);
+            
+            // Initialize
+            updateInstanceList();
+        }
+        
+        function updateInstanceList() {
+            const numCust = parseInt(document.getElementById('numCust').value);
+            
+            // Get unique instances for selected customer count
+            const instances = [...new Set(
+                ablationData
+                    .filter(d => d.num_cust === numCust)
+                    .map(d => d.instance)
+            )].sort();
+            
+            // Update instance dropdown
+            const instanceSelect = document.getElementById('instance');
+            instanceSelect.innerHTML = instances.map(inst => 
+                `<option value="${inst}">${inst.toUpperCase()}</option>`
+            ).join('');
+            
+            if (instances.length > 0) {
+                updateVisualization();
+            }
+        }
+        
+        function updateVisualization() {
+            const numCust = parseInt(document.getElementById('numCust').value);
+            const instance = document.getElementById('instance').value;
+            const vizType = document.getElementById('vizType').value;
+            
+            // Find the data
+            currentData = ablationData.find(d => 
+                d.num_cust === numCust && 
+                d.instance === instance
+            );
+            
+            if (!currentData || !currentData.iteration_data || currentData.iteration_data.length === 0) {
+                showError('No iteration data found for selected criteria');
+                return;
+            }
+            
+            // Update chart based on visualization type
+            switch (vizType) {
+                case 'timing':
+                    drawIterationTiming();
+                    break;
+                case 'time_graph':
+                    drawGraphEvolution('time');
+                    break;
+                case 'ng_graph':
+                    drawGraphEvolution('ng');
+                    break;
+            }
+            
+            // Update statistics
+            updateStatistics();
+        }
+        
+        function drawIterationTiming() {
+            const iterData = currentData.iteration_data;
+            
+            // Find where cuts start
+            const firstCutIndex = iterData.findIndex(d => d.cut_TOT_gen_cut > 0);
+            const cutStartIteration = firstCutIndex >= 0 ? firstCutIndex + 1 : null;
+            
+            const datasets = [
+                {
+                    label: 'LP Time',
+                    data: iterData.map((d, i) => ({ x: i + 1, y: d.lp_time_LB || 0 })),
+                    borderColor: '#1D3557',
+                    backgroundColor: 'rgba(29, 53, 87, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                },
+                {
+                    label: 'Projection Time',
+                    data: iterData.map((d, i) => ({ x: i + 1, y: d.lp_time_project || 0 })),
+                    borderColor: '#E63946',
+                    backgroundColor: 'rgba(230, 57, 70, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                }
+            ];
+            
+            const config = {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        legend: { display: true, position: 'bottom' },
+                        annotation: cutStartIteration ? {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: cutStartIteration - 0.5,
+                                    xMax: cutStartIteration - 0.5,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Cuts Start',
+                                        enabled: true,
+                                        position: 'top'
+                                    }
+                                }
+                            }
+                        } : {}
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Iteration' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Time (seconds)' }
+                        }
+                    }
+                }
+            };
+            
+            updateChart(config);
+            document.getElementById('chartTitle').textContent = 'Iteration Timing Breakdown';
+        }
+        
+        function drawGraphEvolution(graphType) {
+            const iterData = currentData.iteration_data;
+            const prefix = graphType === 'time' ? 'Time Graph' : 'NG Graph';
+            const suffix = graphType === 'time' ? '_timeGraph' : '_ngGraph';
+            
+            // Find where cuts start
+            const firstCutIndex = iterData.findIndex(d => d.cut_TOT_gen_cut > 0);
+            const cutStartIteration = firstCutIndex >= 0 ? firstCutIndex + 1 : null;
+            
+            const datasets = [
+                {
+                    label: `${prefix} Start`,
+                    data: iterData.map((d, i) => ({ x: i + 1, y: d[`start${suffix}`] || 0 })),
+                    borderColor: '#2A9D8F',
+                    backgroundColor: 'rgba(42, 157, 143, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                },
+                {
+                    label: `${prefix} Compress`,
+                    data: iterData.map((d, i) => ({ x: i + 1, y: d[`compress${suffix}`] || 0 })),
+                    borderColor: '#E76F51',
+                    backgroundColor: 'rgba(231, 111, 81, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                },
+                {
+                    label: `${prefix} Split`,
+                    data: iterData.map((d, i) => ({ x: i + 1, y: d[`split${suffix}`] || 0 })),
+                    borderColor: '#264653',
+                    backgroundColor: 'rgba(38, 70, 83, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                }
+            ];
+            
+            const config = {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        legend: { display: true, position: 'bottom' },
+                        annotation: cutStartIteration ? {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: cutStartIteration - 0.5,
+                                    xMax: cutStartIteration - 0.5,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Cuts Start',
+                                        enabled: true,
+                                        position: 'top'
+                                    }
+                                }
+                            }
+                        } : {}
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Iteration' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Graph Size (nodes)' }
+                        }
+                    }
+                }
+            };
+            
+            updateChart(config);
+            document.getElementById('chartTitle').textContent = `${prefix} Size Evolution`;
+        }
+        
+        function updateChart(config) {
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Add annotation plugin if needed
+            if (config.options.plugins.annotation) {
+                Chart.register({
+                    id: 'annotation',
+                    beforeDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const annotation = config.options.plugins.annotation.annotations.line1;
+                        
+                        if (annotation) {
+                            ctx.save();
+                            ctx.strokeStyle = annotation.borderColor;
+                            ctx.lineWidth = annotation.borderWidth;
+                            ctx.setLineDash(annotation.borderDash);
+                            
+                            const x = xScale.getPixelForValue(annotation.xMin);
+                            ctx.beginPath();
+                            ctx.moveTo(x, yScale.top);
+                            ctx.lineTo(x, yScale.bottom);
+                            ctx.stroke();
+                            
+                            ctx.restore();
+                        }
+                    }
+                });
+            }
+            
+            chart = new Chart(document.getElementById('chart'), config);
+        }
+        
+        function updateStatistics() {
+            const stats = [];
+            const iterData = currentData.iteration_data;
+            const vizType = document.getElementById('vizType').value;
+            
+            // Basic stats
+            stats.push({ label: 'Instance', value: currentData.instance.toUpperCase() });
+            stats.push({ label: 'Customers', value: currentData.num_cust });
+            stats.push({ label: 'Iterations', value: iterData.length });
+            
+            // Type-specific stats
+            if (vizType === 'timing') {
+                const totalLP = iterData.reduce((sum, d) => sum + (d.lp_time_LB || 0), 0);
+                const totalProj = iterData.reduce((sum, d) => sum + (d.lp_time_project || 0), 0);
+                const total = totalLP + totalProj;
+                
+                stats.push({ label: 'Total LP Time', value: `${totalLP.toFixed(3)}s` });
+                stats.push({ label: 'Total Projection Time', value: `${totalProj.toFixed(3)}s` });
+                stats.push({ label: 'LP Time %', value: `${(100 * totalLP / total).toFixed(1)}%` });
+                stats.push({ label: 'Projection %', value: `${(100 * totalProj / total).toFixed(1)}%` });
+            } else {
+                // Graph size stats
+                const suffix = vizType === 'time_graph' ? '_timeGraph' : '_ngGraph';
+                const lastIter = iterData[iterData.length - 1];
+                
+                if (lastIter) {
+                    stats.push({ label: 'Final Start Size', value: lastIter[`start${suffix}`] || 0 });
+                    stats.push({ label: 'Final Compress Size', value: lastIter[`compress${suffix}`] || 0 });
+                    stats.push({ label: 'Final Split Size', value: lastIter[`split${suffix}`] || 0 });
+                    
+                    // Compression ratio
+                    const start = lastIter[`start${suffix}`] || 0;
+                    const compress = lastIter[`compress${suffix}`] || 0;
+                    if (start > 0) {
+                        const reduction = 100 * (1 - compress / start);
+                        stats.push({ label: 'Compression %', value: `${reduction.toFixed(1)}%` });
+                    }
+                }
+            }
+            
+            // Total cuts
+            const totalCuts = iterData.reduce((sum, d) => sum + (d.cut_TOT_gen_cut || 0), 0);
+            stats.push({ label: 'Total Cuts', value: totalCuts });
+            
+            // Update display
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = stats.map(stat => `
+                <div class="stat-item">
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-value">${stat.value}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
