@@ -239,9 +239,9 @@
         let currentData = null;
         
         // Load data
-        function loadData() {
+        async function loadData() {
             try {
-                const response = await fetch('ablation_data.json');
+                const response = await fetch('ablation.json');
                 if (!response.ok) {
                     throw new Error('Failed to load data file');
                 }
@@ -252,7 +252,7 @@
                 console.log(`Filtered to ${ablationData.length} normal condition experiments`);
                 initializeDashboard();
             } catch (error) {
-                showError(`Error loading data: ${error.message}.`);
+                showError(`Error loading data: ${error.message}. Please make sure ablation.json exists.`);
             }
         }
         
