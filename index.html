@@ -490,7 +490,8 @@
                         const ctx = chart.ctx;
                         const xScale = chart.scales.x;
                         const yScale = chart.scales.y;
-                        const annotation = config.options.plugins.annotation.annotations.line1;
+                          const annotations = config.options.plugins.annotation?.annotations;
+                          const annotation = annotations?.line1;
                         
                         if (annotation) {
                             ctx.save();
