@@ -1,69 +1,76 @@
-# Data Directory
+# VRPTW Ablation Analysis Dashboard
 
-This directory should contain the ablation experiment data for the VRPTW dashboard.
+Interactive Streamlit dashboard for visualizing Vehicle Routing Problem with Time Windows (VRPTW) ablation experiments.
 
-## Expected Data Structure
+## Features
+
+- **LP Convergence Visualization**: View LP lower bound convergence over iterations or time
+- **Graph Evolution Tracking**: Monitor Time Graph and NG Graph size evolution during optimization
+- **Ablation Condition Comparison**: Compare different experimental conditions side-by-side
+- **Interactive Filtering**: Filter by customer count, ablation condition, and instance
+- **Real-time Statistics**: View key metrics and performance indicators
+
+## Quick Start
+
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run Dashboard**
+   ```bash
+   streamlit run dashboard.py
+   ```
+
+3. **Access Dashboard**
+   - Open your browser to `http://localhost:8501`
+   - Use the sidebar controls to explore different instances and conditions
+
+## Data Structure
 
 The dashboard expects data in the following directory structure:
-
 ```
-data/
-└── WillRezAbl/
-    ├── C1_numCust_25/
-    │   ├── normal/
-    │   │   ├── jy_C101
-    │   │   ├── jy_C102
-    │   │   └── ...
-    │   ├── cuts_off_graphs_on/
-    │   └── ...
-    ├── C1_numCust_50/
-    ├── C1_numCust_100/
-    ├── C2_numCust_100/
-    ├── R1_numCust_50/
-    ├── R1_numCust_100/
-    ├── RC1_numCust_25/
-    ├── RC1_numCust_50/
-    ├── RC1_numCust_100/
-    ├── RC2_numCust_25/
-    └── RC2_numCust_50/
+Sept_19/WillRezAbl/
+├── C1_numCust_25/
+│   ├── normal/
+│   ├── cuts_off_graphs_on/
+│   └── ...
+├── C1_numCust_50/
+├── C1_numCust_100/
+└── ...
 ```
 
-## Data Format
+Each condition directory contains JSON files with experiment results including:
+- LP bounds (`lblp_lower`, `ub_lp`)
+- Timing data (`lp_time_LB`, `lp_time_project`)
+- Graph sizes (`start_timeGraph`, `compress_timeGraph`, `split_timeGraph`)
+- Cutting plane information
 
-Each file (e.g., `jy_C101`) should be a JSON file containing experiment results with the following structure:
+## Visualization Types
 
-### Required Fields
-- `lblp_lower`: Array of LP lower bounds by iteration
-- `ROOT_LP_PRIOR_ADDING_CUTS`: Root LP value before cuts
-- `OUR_ilp_objective`: ILP objective value
-- `OUR_ilp_time`: ILP solve time
+### LP Convergence (Iterations)
+Shows how LP lower and upper bounds evolve over iterations, with markers for when cutting planes begin.
 
-### Optional Fields
-- `ub_lp`: Array of upper bounds by iteration
-- `lp_time_LB`: Array of LP solve times
-- `lp_time_project`: Array of projection times
-- `prob_sizes_at_start`: Array of graph sizes at start
-- `prob_sizes_after_compress`: Array of graph sizes after compression
-- `prob_sizes_after_split`: Array of graph sizes after split
-- `cuttingPlaneBendInfo`: Array of cutting plane information
+### LP Convergence (Time)
+Same as above but with cumulative time on the x-axis instead of iterations.
 
-## Setup Instructions
+### Time Graph Evolution
+Tracks the size evolution of the Time Graph representation through start, compress, and split phases.
 
-1. **Copy your experiment data** into the `WillRezAbl` subdirectory
-2. **Update the data path** in `data_loader.py` if your data is in a different location
-3. **Verify data loading** by running the dashboard and checking for any error messages
+### NG Graph Evolution
+Tracks the size evolution of the NG (Neighborhood Graph) representation through optimization phases.
 
-## Data Privacy
+## Interactive Features
 
-⚠️ **Important**: This directory should contain experimental data only. Do not commit sensitive or proprietary information to the public repository.
+- **Sidebar Filtering**: Filter by customer count, condition, and instance
+- **Statistics Panel**: Real-time metrics including LP bounds, solve times, and iterations
+- **Condition Comparison**: Multi-select comparison of different ablation conditions
+- **Raw Data Explorer**: Expandable section to view iteration-level data tables
+- **Responsive Design**: Charts automatically resize to fit the browser window
 
-Consider adding `data/WillRezAbl/` to `.gitignore` if the data should not be publicly shared.
+## File Structure
 
-## Configuration
-
-To use a different data location, modify the `base_dir` parameter in `data_loader.py`:
-
-```python
-# Change this line in data_loader.py
-def load_ablation_data(base_dir: str = "data/WillRezAbl"):
-```
+- `dashboard.py` - Main Streamlit application
+- `data_loader.py` - Data processing and loading functions
+- `requirements.txt` - Python package dependencies
+- `README.md` - This documentation file
