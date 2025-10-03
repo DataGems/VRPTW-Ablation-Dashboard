@@ -482,34 +482,32 @@
                 chart.destroy();
             }
             
-            // Add annotation plugin if needed
-            if (config.options.plugins.annotation) {
-                Chart.register({
-                    id: 'annotation',
-                    beforeDraw: (chart) => {
-                        const ctx = chart.ctx;
-                        const xScale = chart.scales.x;
-                        const yScale = chart.scales.y;
-                          const annotations = config.options.plugins.annotation?.annotations;
-                          const annotation = annotations?.line1;
-                        
-                        if (annotation) {
-                            ctx.save();
-                            ctx.strokeStyle = annotation.borderColor;
-                            ctx.lineWidth = annotation.borderWidth;
-                            ctx.setLineDash(annotation.borderDash);
-                            
-                            const x = xScale.getPixelForValue(annotation.xMin);
-                            ctx.beginPath();
-                            ctx.moveTo(x, yScale.top);
-                            ctx.lineTo(x, yScale.bottom);
-                            ctx.stroke();
-                            
-                            ctx.restore();
-                        }
-                    }
-                });
-            }
+          // Add annotation plugin if needed
+          if (config.options.plugins.annotation && config.options.plugins.annotation.annotations &&
+          config.options.plugins.annotation.annotations.line1) {
+              Chart.register({
+                  id: 'annotation',
+                  beforeDraw: (chart) => {
+                      const ctx = chart.ctx;
+                      const xScale = chart.scales.x;
+                      const yScale = chart.scales.y;
+                      const annotation = config.options.plugins.annotation.annotations.line1;
+        
+                      ctx.save();
+                      ctx.strokeStyle = annotation.borderColor || 'red';
+                      ctx.lineWidth = annotation.borderWidth || 2;
+                      ctx.setLineDash(annotation.borderDash || [5, 5]);
+        
+                      const x = xScale.getPixelForValue(annotation.xMin);
+                      ctx.beginPath();
+                      ctx.moveTo(x, yScale.top);
+                      ctx.lineTo(x, yScale.bottom);
+                      ctx.stroke();
+        
+                      ctx.restore();
+                  }
+              });
+          }
             
             chart = new Chart(document.getElementById('chart'), config);
         }
