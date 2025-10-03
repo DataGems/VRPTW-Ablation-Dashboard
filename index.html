@@ -364,23 +364,7 @@
                     plugins: {
                         title: { display: false },
                         legend: { display: true, position: 'bottom' },
-                        annotation: cutStartIteration ? {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    xMin: cutStartIteration - 0.5,
-                                    xMax: cutStartIteration - 0.5,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: 'Cuts Start',
-                                        enabled: true,
-                                        position: 'top'
-                                    }
-                                }
-                            }
-                        } : {}
+                        cutLine: cutStartIteration
                     },
                     scales: {
                         x: {
@@ -443,23 +427,7 @@
                     plugins: {
                         title: { display: false },
                         legend: { display: true, position: 'bottom' },
-                        annotation: cutStartIteration ? {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    xMin: cutStartIteration - 0.5,
-                                    xMax: cutStartIteration - 0.5,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: 'Cuts Start',
-                                        enabled: true,
-                                        position: 'top'
-                                    }
-                                }
-                            }
-                        } : {}
+                        cutLine: cutStartIteration
                     },
                     scales: {
                         x: {
@@ -477,34 +445,43 @@
             document.getElementById('chartTitle').textContent = `${prefix} Size Evolution`;
         }
         
-        function updateChart(config) {
-            if (chart) {
-                chart.destroy();
-            }
-            
-          // Add annotation plugin if needed
-          if (config.options.plugins.annotation && config.options.plugins.annotation.annotations &&
-          config.options.plugins.annotation.annotations.line1) {
+                function updateChart(config) {
+              if (chart) {
+                  chart.destroy();
+              }
+        
+              chart = new Chart(document.getElementById('chart'), config);
+        
+              // Add custom plugin for vertical line
               Chart.register({
-                  id: 'annotation',
-                  beforeDraw: (chart) => {
-                      const ctx = chart.ctx;
-                      const xScale = chart.scales.x;
-                      const yScale = chart.scales.y;
-                      const annotation = config.options.plugins.annotation.annotations.line1;
+                  id: 'verticalLine',
+                  afterDraw: (chart) => {
+                      // Check if we need to draw a line
+                      const cutStartIteration = chart.options.plugins.cutLine;
+                      if (cutStartIteration) {
+                          const ctx = chart.ctx;
+                          const xScale = chart.scales.x;
+                          const yScale = chart.scales.y;
         
-                      ctx.save();
-                      ctx.strokeStyle = annotation.borderColor || 'red';
-                      ctx.lineWidth = annotation.borderWidth || 2;
-                      ctx.setLineDash(annotation.borderDash || [5, 5]);
+                          const x = xScale.getPixelForValue(cutStartIteration);
         
-                      const x = xScale.getPixelForValue(annotation.xMin);
-                      ctx.beginPath();
-                      ctx.moveTo(x, yScale.top);
-                      ctx.lineTo(x, yScale.bottom);
-                      ctx.stroke();
+                          ctx.save();
+                          ctx.strokeStyle = 'red';
+                          ctx.lineWidth = 2;
+                          ctx.setLineDash([5, 5]);
         
-                      ctx.restore();
+                          ctx.beginPath();
+                          ctx.moveTo(x, yScale.top);
+                          ctx.lineTo(x, yScale.bottom);
+                          ctx.stroke();
+        
+                          // Add label
+                          ctx.fillStyle = 'red';
+                          ctx.font = '12px Arial';
+                          ctx.fillText('Cuts Start', x + 5, yScale.top + 20);
+        
+                          ctx.restore();
+                      }
                   }
               });
           }
