@@ -252,7 +252,7 @@
                 console.log(`Filtered to ${ablationData.length} normal condition experiments`);
                 initializeDashboard();
             } catch (error) {
-                showError(`Error loading data: ${error.message}. Please make sure ablation.json exists.`);
+                showError(`Error loading data: ${error.message}`);
             }
         }
         
@@ -363,8 +363,7 @@
                     maintainAspectRatio: false,
                     plugins: {
                         title: { display: false },
-                        legend: { display: true, position: 'bottom' },
-                        cutLine: cutStartIteration
+                        legend: { display: true, position: 'bottom' }
                     },
                     scales: {
                         x: {
@@ -378,7 +377,7 @@
                 }
             };
             
-            updateChart(config);
+            updateChart(config, cutStartIteration);
             document.getElementById('chartTitle').textContent = 'Iteration Timing Breakdown';
         }
         
@@ -426,8 +425,7 @@
                     maintainAspectRatio: false,
                     plugins: {
                         title: { display: false },
-                        legend: { display: true, position: 'bottom' },
-                        cutLine: cutStartIteration
+                        legend: { display: true, position: 'bottom' }
                     },
                     scales: {
                         x: {
@@ -441,52 +439,47 @@
                 }
             };
             
-            updateChart(config);
+            updateChart(config, cutStartIteration);
             document.getElementById('chartTitle').textContent = `${prefix} Size Evolution`;
         }
         
-                function updateChart(config) {
-              if (chart) {
-                  chart.destroy();
-              }
-        
-              chart = new Chart(document.getElementById('chart'), config);
-        
-              // Add custom plugin for vertical line
-              Chart.register({
-                  id: 'verticalLine',
-                  afterDraw: (chart) => {
-                      // Check if we need to draw a line
-                      const cutStartIteration = chart.options.plugins.cutLine;
-                      if (cutStartIteration) {
-                          const ctx = chart.ctx;
-                          const xScale = chart.scales.x;
-                          const yScale = chart.scales.y;
-        
-                          const x = xScale.getPixelForValue(cutStartIteration);
-        
-                          ctx.save();
-                          ctx.strokeStyle = 'red';
-                          ctx.lineWidth = 2;
-                          ctx.setLineDash([5, 5]);
-        
-                          ctx.beginPath();
-                          ctx.moveTo(x, yScale.top);
-                          ctx.lineTo(x, yScale.bottom);
-                          ctx.stroke();
-        
-                          // Add label
-                          ctx.fillStyle = 'red';
-                          ctx.font = '12px Arial';
-                          ctx.fillText('Cuts Start', x + 5, yScale.top + 20);
-        
-                          ctx.restore();
-                      }
-                  }
-              });
-          }
+        function updateChart(config, cutStartIteration) {
+            if (chart) {
+                chart.destroy();
+            }
             
             chart = new Chart(document.getElementById('chart'), config);
+            
+            // Add red dashed line for cuts start if needed
+            if (cutStartIteration) {
+                const ctx = chart.ctx;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+                
+                const originalDraw = chart.draw;
+                chart.draw = function() {
+                    originalDraw.call(this);
+                    
+                    const x = xScale.getPixelForValue(cutStartIteration - 0.5);
+                    
+                    ctx.save();
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, yScale.top);
+                    ctx.lineTo(x, yScale.bottom);
+                    ctx.stroke();
+                    
+                    // Add label
+                    ctx.fillStyle = 'red';
+                    ctx.font = '12px Arial';
+                    ctx.fillText('Cuts Start', x + 5, yScale.top + 20);
+                    
+                    ctx.restore();
+                };
+            }
         }
         
         function updateStatistics() {
@@ -505,10 +498,12 @@
                 const totalProj = iterData.reduce((sum, d) => sum + (d.lp_time_project || 0), 0);
                 const total = totalLP + totalProj;
                 
-                stats.push({ label: 'Total LP Time', value: `${totalLP.toFixed(3)}s` });
-                stats.push({ label: 'Total Projection Time', value: `${totalProj.toFixed(3)}s` });
-                stats.push({ label: 'LP Time %', value: `${(100 * totalLP / total).toFixed(1)}%` });
-                stats.push({ label: 'Projection %', value: `${(100 * totalProj / total).toFixed(1)}%` });
+                if (total > 0) {
+                    stats.push({ label: 'Total LP Time', value: `${totalLP.toFixed(3)}s` });
+                    stats.push({ label: 'Total Projection Time', value: `${totalProj.toFixed(3)}s` });
+                    stats.push({ label: 'LP Time %', value: `${(100 * totalLP / total).toFixed(1)}%` });
+                    stats.push({ label: 'Projection %', value: `${(100 * totalProj / total).toFixed(1)}%` });
+                }
             } else {
                 // Graph size stats
                 const suffix = vizType === 'time_graph' ? '_timeGraph' : '_ngGraph';
